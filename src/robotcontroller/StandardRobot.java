@@ -37,7 +37,7 @@ public class StandardRobot {
 			rightMotor = new NXTRegulatedMotor(MotorPort.B);
 			clawMotor = new NXTRegulatedMotor(MotorPort.C);
 			// instantiate Pilot
-			pilot = new DifferentialPilot(Consts.WHEEL_DIA, Consts.TRACK_WIDTH, leftMotor, rightMotor, true);
+			pilot = new DifferentialPilot(Consts.WHEEL_DIA, Consts.TRACK_WIDTH, leftMotor, rightMotor, false);
 
 		} 
 		catch (Exception e) {
@@ -72,7 +72,82 @@ public class StandardRobot {
 	}
 	
 	public void goToCorner(char Loc) {
-		//Pending
+		
+		/*
+		-----------------------------
+		|R (A)					G(B)|
+		|			  W				|
+		|			  |				|
+		|	  S-------|-------N		|
+		|			  |				|
+		|			  E				|
+		|Ch						Y(C)|
+		-----------------------------
+								
+		
+		*/
+		
+		// Go to A
+		System.out.println("inside");
+		pilot.setTravelSpeed(5);
+		pilot.setRotateSpeed(30);
+		
+		StandardRobot sbTemp = new StandardRobot();
+		float magneticLocation = sbTemp.getCompassValue();
+		float angle;
+		if(magneticLocation >= 90.0 && magneticLocation <= 270.0) {
+			rightMotor.backward();
+			while(true){
+				angle = sbTemp.getCompassValue();
+				if(angle <= 287.0 && angle >=277.0){
+					rightMotor.stop();
+					System.out.println(angle);
+					break;
+				}
+				
+			}
+			
+		} else {
+			rightMotor.forward();
+			while(true){
+				angle = sbTemp.getCompassValue();
+				if(angle <= 287.0 && angle >=277.0){
+					rightMotor.stop();
+					System.out.println(angle);
+					break;
+				}
+				
+			}
+			
+		}
+		
+		float dist = sbTemp.getUltraSonicValue();
+		while(sbTemp.getUltraSonicValue() > Consts.OBST_DIST_THRES){
+			pilot.forward();
+			System.out.println("dist "+sbTemp.getUltraSonicValue());
+		}
+		pilot.stop();
+		sbTemp.turnLeft();
+		
+		while(sbTemp.getUltraSonicValue() > Consts.OBST_DIST_THRES ){
+			
+			pilot.forward();
+			System.out.println("dist "+ sbTemp.getUltraSonicValue());
+		}
+		pilot.stop();
+		
+		/*StandardRobot sbot = new StandardRobot();
+		pilot.rotate(45);
+		while(sbot.getUltraSonicValue() >= Consts.OBST_DIST_THRES) {
+			pilot.forward();
+		}
+		
+		sbot.turnLeft();
+		
+		while(sbot.getUltraSonicValue() >= Consts.OBST_DIST_THRES) {
+			pilot.forward();
+		}*/
+		
 	}
 	
 	public float getEnergy() {
@@ -147,6 +222,23 @@ public class StandardRobot {
 	
 	public float getCompassValue() {
 		return cps.getDegrees();
+	}
+	
+	public static void main(String args[]) {
+		System.out.println("Start of the program");
+		Button.waitForAnyPress();
+		StandardRobot sr = new StandardRobot();
+		
+		/*while(true) {
+			float magnaticAngle = sr.getCompassValue();
+			System.out.println(magnaticAngle);
+			Button.waitForAnyPress();
+		}*/
+		while(true) {
+			sr.goToCorner('S');
+			Button.waitForAnyPress();
+		}
+		
 	}
 	
 }

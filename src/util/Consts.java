@@ -2,7 +2,7 @@ package util;
 
 public class Consts {
 	public static final int DEFAULT_SPEED = 150;
-	public static final int OBST_DIST_THRES = 8;
+	public static final int OBST_DIST_THRES = 20;
 	public static final int TURN_RIGHT = -45;
 	public static final int TURN_LEFT = 45;
 	public static final int CLAW_TURN = 45;
