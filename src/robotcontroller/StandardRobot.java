@@ -1,10 +1,7 @@
 package robotcontroller;
 
-import java.io.IOException;
-
 import lejos.nxt.Battery;
 import lejos.nxt.Button;
-import lejos.nxt.LCD;
 import lejos.nxt.MotorPort;
 import lejos.nxt.NXTRegulatedMotor;
 import lejos.nxt.SensorPort;
@@ -13,7 +10,6 @@ import lejos.nxt.addon.ColorHTSensor;
 import lejos.nxt.addon.CompassHTSensor;
 import lejos.robotics.navigation.DifferentialPilot;
 import util.Consts;
-import util.Consts.CORNER;
 
 public class StandardRobot {
 	public static ColorHTSensor ballSensor, floorSensor;
@@ -24,8 +20,6 @@ public class StandardRobot {
 	public static DifferentialPilot pilot;
 	public static int clawStatus = Consts.CLAWOPEN; // 1 for open and 0 for close
 	public static char currentCorner = ' ';
-	
-	// corner variables
 	
 	public StandardRobot() {
 		// instantiate sensors
@@ -49,12 +43,16 @@ public class StandardRobot {
 		}
 	}
 	
-	public void moveForward()   {
-		pilot.forward();
+	public void moveForward() {
+		setMoveSpeed();
+		leftMotor.forward();
+		rightMotor.forward();
 	}
 	
-	public void moveBackward()  {
-		pilot.backward();
+	public void moveBackward() {
+		setMoveSpeed();
+		leftMotor.backward();
+		rightMotor.backward();
 	}
 	
 	public void turnRight() {
@@ -66,274 +64,113 @@ public class StandardRobot {
 	}
 	
 	public void pickObject() {
-		clawMotor.rotate(Consts.CLAW_TURN);
-		clawStatus = Consts.CLAWCLOSE;
+		// Vinod Code
 	}
 	
 	public void dropObject() {
-		clawMotor.rotate(-(Consts.CLAW_TURN));
-		clawStatus = Consts.CLAWOPEN;
+		// Vinod Code
 	}
 	
-	public float[] getCorderDetails(char Loc) {
-		/*
-		-----------------------------
-		|R (A)					G(B)|
-		|			  W	270			|
-		|			  |				|
-		| 180 S-------|-------N 0	|
-		|			  |				|
-		|			  E 90			|
-		|Ch						Y(C)|
-		-----------------------------
-								
-		
-		*/
-		
-		float cornerAngle[] = new float[2];
-		switch (Loc) {
-		case 'A':
-				cornerAngle[0] = 197.0f;
-				cornerAngle[1] = 287.0f;
-			break;
-		case 'B':
-			cornerAngle[0] = 287.0f;
-			cornerAngle[1] = 0.0f;
-			break;
-		case 'C':
-			cornerAngle[0] = 0.0f;
-			cornerAngle[1] = 90.0f;
-			break;
-			
-		case 'D': // D means charging Point
-			cornerAngle[0] = 90.0f;
-			cornerAngle[1] = 197.0f;
-			break;
-
-		default:
-			break;
-		}
-		return cornerAngle;
-	}
-	
-	public static void goToCornerAB(char Loc) {
+	public void setMotorAcc() {
 		leftMotor.setAcceleration(Consts.MOTOR_ACCELERATION);
 		rightMotor.setAcceleration(Consts.MOTOR_ACCELERATION);
+	}
+	
+	public void setRotationSpeed() {
 		leftMotor.setSpeed(Consts.ROTATION_SPEED);
 		rightMotor.setSpeed(Consts.ROTATION_SPEED);
-		
-		
-		// part 1
-		float magneticLocation = cps.getDegrees();
-		float angle;
-		if(magneticLocation >= 90.0 && magneticLocation <= 287.0) {
-			rightMotor.backward();
+	}
+	
+	public void setMoveSpeed() {
+		leftMotor.setSpeed(Consts.MOVE_SPEED);
+		rightMotor.setSpeed(Consts.MOVE_SPEED);
+	}
+	
+	public void rotateForCornerAB() {
+		setRotationSpeed();
+		float magneticLocation = getCompassValue();
+		if(magneticLocation >= Consts.EAST && magneticLocation <= Consts.WEST) {
 			leftMotor.forward();
-			while(true){
-				angle = cps.getDegrees();
-				if(angle <= 290.0 && angle >=284.0){
-					rightMotor.stop();
-					leftMotor.stop();
-					System.out.println(angle);
-					break;
-				}
-				
+			rightMotor.backward();
+			while(getCompassValue() >= Consts.AB_ANGLE + Consts.ANGLE_THRES 
+					|| getCompassValue() <=Consts.AB_ANGLE - Consts.ANGLE_THRES) {
+				// loop until doesn't reach to right direction
 			}
-			
+			stop();
 		} else {
 			leftMotor.backward();
 			rightMotor.forward();
-			while(true){
-				angle = cps.getDegrees();
-				if(angle <= 290.0 && angle >=284.0){
-					rightMotor.stop();
-					leftMotor.stop();
-					System.out.println(angle);
-					break;
-				}
-				
+			while(getCompassValue() >= Consts.AB_ANGLE + Consts.ANGLE_THRES 
+					|| getCompassValue() <=Consts.AB_ANGLE - Consts.ANGLE_THRES) {
+				// loop until doesn't reach to right direction
 			}
-			
 		}
-		
-		//Button.waitForAnyPress();
-		// part 2
-		StandardRobot sbTemp = new StandardRobot();
-		float dist = sbTemp.getUltraSonicValue();
-		while(sbTemp.getUltraSonicValue() > Consts.OBST_DIST_THRES){
-			leftMotor.setSpeed(Consts.MOVE_SPEED);
-			rightMotor.setSpeed(Consts.MOVE_SPEED);
-			leftMotor.forward();
+		stop();
+	}
+	
+	public void rotateForCornerCD() {
+		setRotationSpeed();
+		float magneticLocation = getCompassValue();
+		if(magneticLocation >= Consts.EAST && magneticLocation <= Consts.WEST) {
 			rightMotor.forward();
-			System.out.println("dist "+sbTemp.getUltraSonicValue());
-		}
-		
-		leftMotor.stop();
-		rightMotor.stop();
-		leftMotor.setSpeed(Consts.ROTATION_SPEED);
-		rightMotor.setSpeed(Consts.ROTATION_SPEED);
-		
-		// part 3
-		//Button.waitForAnyPress();
-		float magneticLocation1 = cps.getDegrees();
-		float angle1;
-		if(magneticLocation1 >= 90.0 && magneticLocation1 <= 287.0) {
-			rightMotor.backward();
-			leftMotor.forward();
-			while(true){
-				angle1 = cps.getDegrees();
-				if(angle1 <= 290.0 && angle1 >=284.0){
-					rightMotor.stop();
-					leftMotor.stop();
-					System.out.println(angle1);
-					break;
-				}
-				
-			}
-			
-		} else {
 			leftMotor.backward();
-			rightMotor.forward();
-			while(true){
-				angle = cps.getDegrees();
-				if(angle <= 290.0 && angle >=284.0){
-					rightMotor.stop();
-					leftMotor.stop();
-					System.out.println(angle);
-					break;
-				}
-				
+			while(getCompassValue() >= Consts.CD_ANGLE + Consts.ANGLE_THRES 
+					|| getCompassValue() <=Consts.CD_ANGLE - Consts.ANGLE_THRES) {
+				// loop until doesn't reach to right direction
 			}
-			
+			stop();
+		} else {
+			leftMotor.forward();
+			rightMotor.backward();
+			while(getCompassValue() >= Consts.CD_ANGLE + Consts.ANGLE_THRES 
+					|| getCompassValue() <=Consts.CD_ANGLE - Consts.ANGLE_THRES) {
+				// loop until doesn't reach to right direction
+			}
 		}
-		
+		stop();
+	}
+	
+	public void goNearToWall() {
+		moveForward();
+		while(getUltraSonicValue() > Consts.OBST_DIST_THRES){
+			// loop until don't reach to wall
+		}
+		stop();
+	}
+	
+	
+	public void goToCornerAB(char Loc) {
+		setMotorAcc();
+		// part 1 Rotate in direction to reach corner 
+		rotateForCornerAB();
+		// part 2 reach to wall
+		goNearToWall();
+		// part 3 align itself again
+		rotateForCornerAB();
 		// part 4
 		if (Loc == 'A') {
-			sbTemp.turnLeft();
+			turnLeft();
 		} else if (Loc == 'B') {
-			sbTemp.turnRight();
+			turnRight();
 		}
-		
-		leftMotor.setSpeed(Consts.MOVE_SPEED);
-		rightMotor.setSpeed(Consts.MOVE_SPEED);
-		while(sbTemp.getUltraSonicValue() > Consts.OBST_DIST_THRES ){
-			
-			leftMotor.forward();
-			rightMotor.forward();
-			System.out.println("dist "+ sbTemp.getUltraSonicValue());
-		}
-		leftMotor.stop();
-		rightMotor.stop();
+		goNearToWall();
 	}
 	
-	public static void goToCornerCD(char Loc) {
-		leftMotor.setAcceleration(Consts.MOTOR_ACCELERATION);
-		rightMotor.setAcceleration(Consts.MOTOR_ACCELERATION);
-		leftMotor.setSpeed(Consts.ROTATION_SPEED);
-		rightMotor.setSpeed(Consts.ROTATION_SPEED);
-		
-		
-		// part 1
-		float magneticLocation = cps.getDegrees();
-		float angle;
-		if(magneticLocation >= 90.0 && magneticLocation <= 287.0) {
-			rightMotor.forward();
-			leftMotor.backward();
-			while(true){
-				angle = cps.getDegrees();
-				if(angle <= 93.0 && angle >=87.0){
-					rightMotor.stop();
-					leftMotor.stop();
-					System.out.println(angle);
-					break;
-				}
-				
-			}
-			
-		} else {
-			leftMotor.forward();
-			rightMotor.backward();
-			while(true){
-				angle = cps.getDegrees();
-				if(angle <= 93.0 && angle >=87.0){
-					rightMotor.stop();
-					leftMotor.stop();
-					System.out.println(angle);
-					break;
-				}
-				
-			}
-			
-		}
-		
-		//Button.waitForAnyPress();
-		// part 2
-		StandardRobot sbTemp = new StandardRobot();
-		float dist = sbTemp.getUltraSonicValue();
-		while(sbTemp.getUltraSonicValue() > Consts.OBST_DIST_THRES){
-			leftMotor.setSpeed(Consts.MOVE_SPEED);
-			rightMotor.setSpeed(Consts.MOVE_SPEED);
-			leftMotor.forward();
-			rightMotor.forward();
-			System.out.println("dist "+sbTemp.getUltraSonicValue());
-		}
-		
-		leftMotor.stop();
-		rightMotor.stop();
-		leftMotor.setSpeed(Consts.ROTATION_SPEED);
-		rightMotor.setSpeed(Consts.ROTATION_SPEED);
-		
-		// part 3
-		//Button.waitForAnyPress();
-		float magneticLocation1 = cps.getDegrees();
-		float angle1;
-		if(magneticLocation1 >= 90.0 && magneticLocation1 <= 287.0) {
-			rightMotor.forward();
-			leftMotor.backward();
-			while(true){
-				angle1 = cps.getDegrees();
-				if(angle1 <= 93.0 && angle1 >=87.0){
-					rightMotor.stop();
-					leftMotor.stop();
-					System.out.println(angle1);
-					break;
-				}
-				
-			}
-			
-		} else {
-			leftMotor.forward();
-			rightMotor.backward();
-			while(true){
-				angle = cps.getDegrees();
-				if(angle <= 93.0 && angle >=87.0){
-					rightMotor.stop();
-					leftMotor.stop();
-					System.out.println(angle);
-					break;
-				}
-				
-			}
-			
-		}
-		
+	public void goToCornerCD(char Loc) {
+		setMotorAcc();
+		// part 1 Rotate in direction to reach corner 
+		rotateForCornerCD();
+		// part 2 reach to wall
+		goNearToWall();
+		// part 3 align itself again
+		rotateForCornerCD();
 		// part 4
 		if (Loc == 'C') {
-			sbTemp.turnLeft();
+			turnLeft();
 		} else if (Loc == 'D') {
-			sbTemp.turnRight();
+			turnRight();
 		}
-		
-		leftMotor.setSpeed(Consts.MOVE_SPEED);
-		rightMotor.setSpeed(Consts.MOVE_SPEED);
-		while(sbTemp.getUltraSonicValue() > Consts.OBST_DIST_THRES ){
-			
-			leftMotor.forward();
-			rightMotor.forward();
-			System.out.println("dist "+ sbTemp.getUltraSonicValue());
-		}
-		leftMotor.stop();
-		rightMotor.stop();
+		goNearToWall();
 	}
 
 	public void goToCorner(char Loc) {
@@ -421,10 +258,10 @@ public class StandardRobot {
 	public int getClawStatus() {
 		return clawStatus;
 	}
+	
 	public void stop() {
 		leftMotor.stop();
 		rightMotor.stop();
-		clawMotor.stop();
 	}
 	
 	public int getColorObjectInt() {
@@ -448,10 +285,6 @@ public class StandardRobot {
 	
 	public float getCompassValue() {
 		return cps.getDegrees();
-	}
-	
-	public void goToCenter() {
-		
 	}
 	
 	public static void main(String args[]) {
@@ -483,38 +316,5 @@ public class StandardRobot {
 			sr.goToCorner('D');
 			Button.waitForAnyPress();
 		}
-		
-		
-//		sr.goToCorner('A');
-//		Button.waitForAnyPress();
-//		sr.goToCorner('A');
-//		Button.waitForAnyPress();
-//		sr.goToCorner('A');
-//		Button.waitForAnyPress();
-//		sr.goToCorner('A');
-		/*Button.waitForAnyPress();
-		sr.goToCorner('B');
-		Button.waitForAnyPress();
-		sr.goToCorner('B');
-		Button.waitForAnyPress();
-		sr.goToCorner('B');
-		Button.waitForAnyPress();
-		sr.goToCorner('B');
-		Button.waitForAnyPress();
-		sr.goToCorner('C');
-		Button.waitForAnyPress();
-		sr.goToCorner('C');
-		Button.waitForAnyPress();
-		sr.goToCorner('C');
-		Button.waitForAnyPress();
-		sr.goToCorner('C');
-		Button.waitForAnyPress();
-		sr.goToCorner('D');
-		Button.waitForAnyPress();
-		sr.goToCorner('D');
-		Button.waitForAnyPress();
-		sr.goToCorner('D');
-		Button.waitForAnyPress();
-		sr.goToCorner('D');*/
 	}
 }
