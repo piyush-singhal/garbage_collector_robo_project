@@ -16,4 +16,8 @@ public class Consts {
 	public static final int CLAWCLOSE = 0;
 	public static final float WHEEL_DIA = 26f; //wheel diameter
 	public static final float TRACK_WIDTH = 120f;
+	public static final float ANGLE_THRES = 2f;
+	public static final int MOVE_SPEED = 250;
+	public static final int ROTATION_SPEED = 100;
+	public static final int MOTOR_ACCELERATION = 2000;
 }
