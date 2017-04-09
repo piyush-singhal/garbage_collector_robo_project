@@ -86,6 +86,29 @@ public class StandardRobot {
 		rightMotor.setSpeed(Consts.MOVE_SPEED);
 	}
 	
+	public void goToAngle(float targetAngle) {
+		setRotationSpeed();
+		float magneticLocation = getCompassValue();
+		float angleMovement = targetAngle-magneticLocation;
+		if (angleMovement <= 180 && angleMovement > 0 || angleMovement < -180) {
+			leftMotor.forward();
+			rightMotor.backward();
+			while(getCompassValue() >= targetAngle + Consts.ANGLE_THRES 
+					|| getCompassValue() <=targetAngle- Consts.ANGLE_THRES) {
+				// loop until doesn't reach to right direction
+			}
+			stop();
+		} else {
+			leftMotor.backward();
+			rightMotor.forward();
+			while(getCompassValue() >= targetAngle + Consts.ANGLE_THRES 
+					|| getCompassValue() <= targetAngle- Consts.ANGLE_THRES) {
+				// loop until doesn't reach to right direction
+			}
+			stop();
+		}
+	}
+	
 	public void rotateForCornerAB() {
 		setRotationSpeed();
 		float magneticLocation = getCompassValue();
@@ -289,7 +312,7 @@ public class StandardRobot {
 	
 	public static void main(String args[]) {
 		System.out.println("Start of the program");
-		Button.waitForAnyPress();
+		//Button.waitForAnyPress();
 		StandardRobot sr = new StandardRobot();
 		
 		/*while(true) {
@@ -298,23 +321,22 @@ public class StandardRobot {
 			Button.waitForAnyPress();
 		}*/
 		
+		 
+		
 		while(true) {
-			sr.goToCorner('A');
+			System.out.println("calibrate");
 			Button.waitForAnyPress();
-			sr.goToCorner('A');
+			float calibrationAngle1 = sr.getCompassValue();
+			System.out.println(calibrationAngle1);
+			// go to south		
+			sr.goToAngle((180.0f+calibrationAngle1)%360);
 			Button.waitForAnyPress();
-			sr.goToCorner('B');
+			// go to west
+			sr.goToAngle((270.0f+calibrationAngle1)%360);
 			Button.waitForAnyPress();
-			sr.goToCorner('B');
-			Button.waitForAnyPress();
-			sr.goToCorner('C');
-			Button.waitForAnyPress();
-			sr.goToCorner('C');
-			Button.waitForAnyPress();
-			sr.goToCorner('D');
-			Button.waitForAnyPress();
-			sr.goToCorner('D');
-			Button.waitForAnyPress();
+			// go to north			
+			sr.goToAngle((0.0f+calibrationAngle1)%360);
 		}
+		
 	}
 }
